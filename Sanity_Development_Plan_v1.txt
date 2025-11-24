@@ -1,0 +1,182 @@
+
+🚀 SANITY WEB APP DEVELOPMENT PLAN (v1)
+---------------------------------------
+Instruction Set for Cursor AI
+
+🧩 Project Name
+Sanity: Real vs Fake News Detection and Verification Web App
+
+---------------------------------------
+1. PROJECT OVERVIEW
+
+Sanity is an AI-driven web app that detects whether a news article is real or fake. It uses a locally fine-tuned DistilBERT model for NLP classification and integrates Groq API for low-confidence verification and user Q&A.
+
+The goal: develop a responsive, modern, explainable web app allowing users to input text, PDF, or URL, and get predictions with reasoning.
+
+---------------------------------------
+2. BASE INSTRUCTIONS FOR CURSOR AI
+
+1. Verify that the required stack components (Python, Node.js, npm/yarn, Flask, React, TailwindCSS, Framer Motion, PyTorch, Transformers, pandas, scikit-learn, groq, etc.) are installed.
+   - If not present, install automatically or display install commands.
+2. During setup:
+   - Request Groq API key from developer and store in `.env`.
+   - Ensure DistilBERT model is fully downloaded locally before training.
+3. Maintain a `dev_progress.txt` file in `/backend/` logging milestones, errors, and issues.
+   - Use a helper function `update_progress_log(message)` if needed.
+
+---------------------------------------
+3. TECH STACK OVERVIEW
+
+| Layer | Technology |
+|-------|-------------|
+| Frontend | React (TailwindCSS + Framer Motion) |
+| Backend | Flask (Python) |
+| ML/NLP | Transformers (DistilBERT) + PyTorch |
+| Verification & Q&A | Groq API |
+| Data Handling | pandas, numpy, scikit-learn |
+| PDF & Web Extraction | PyPDF2, pdfplumber, newspaper3k, pymupdf |
+| Environment | dotenv |
+| Deployment (Future) | Docker |
+
+⚠️ Containerization is NOT part of this sprint.
+
+---------------------------------------
+4. FOLDER STRUCTURE
+
+sanity/
+ ├── backend/
+ │   ├── app.py
+ │   ├── preprocess_data.py
+ │   ├── model/distilbert/
+ │   ├── utils/
+ │   │   ├── llm_handler.py
+ │   │   ├── pdf_extractor.py
+ │   │   ├── webpage_extractor.py
+ │   │   └── logger.py
+ │   ├── data/raw/{fake.csv, real.csv}
+ │   ├── data/processed/{train.csv, val.csv, test.csv}
+ │   └── dev_progress.txt
+ ├── frontend/
+ │   ├── src/{components, pages, styles, App.jsx, main.jsx}
+ │   └── tailwind.config.js
+ └── .env
+
+---------------------------------------
+5. DATA PREPROCESSING (Python Script: preprocess_data.py)
+
+- Merge fake & real CSVs, label (1=Real, 0=Fake)
+- Clean text: lowercase, remove punctuation, URLs, lemmatize, remove stopwords
+- Shuffle & split: 70% train, 15% val, 15% test
+- Save to /backend/data/processed/
+- Log progress after each stage in dev_progress.txt
+
+---------------------------------------
+6. MODEL SETUP (Local DistilBERT)
+
+Download model locally:
+```python
+from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
+tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased")
+model.save_pretrained("./backend/model/distilbert")
+tokenizer.save_pretrained("./backend/model/distilbert")
+```
+
+Load locally (offline):
+```python
+tokenizer = DistilBertTokenizer.from_pretrained("./backend/model/distilbert")
+model = DistilBertForSequenceClassification.from_pretrained("./backend/model/distilbert")
+```
+
+Train with train/val datasets, save fine-tuned model as `sanity_model.bin`.
+
+---------------------------------------
+7. GROQ API INTEGRATION
+
+.env file:
+GROQ_API_KEY=your_api_key_here
+
+(A) Verification Prompt (Backend → Groq)
+Used when model confidence < 0.70.
+```json
+[
+  {"role": "system", "content": "You are an AI fact-checker evaluating authenticity of news content."},
+  {"role": "user", "content": "Article:\n{{article_text}}\nDecide Real or Fake. Respond:\nPrediction: [Real/Fake]\nReasoning: [2-3 factual sentences]"}
+]
+```
+
+(B) User Follow-up Prompt (Frontend → Groq)
+```json
+[
+  {"role": "system", "content": "You are a helpful AI answering questions about a news article."},
+  {"role": "user", "content": "Context:\n{{article_summary}}\nQuestion:\n{{user_question}}\nAnswer clearly and factually."}
+]
+```
+
+---------------------------------------
+8. FRONTEND (React + TailwindCSS + Framer Motion)
+
+Setup:
+```bash
+npx create-react-app frontend
+cd frontend
+npm install axios framer-motion tailwindcss @headlessui/react @heroicons/react
+npx tailwindcss init -p
+```
+
+Guidelines:
+- Modular components: UploadCard, ResultCard, ChatBox
+- Smooth transitions & animations
+- Display predictions with confidence %, verification summary, and Q&A chat
+- Minimal, clean, responsive UI
+
+---------------------------------------
+9. BACKEND-FRONTEND INTEGRATION
+
+Endpoints:
+| /predict | POST | Runs preprocessing & model prediction |
+| /verify | POST | Invokes Groq API if low confidence |
+| /ask | POST | Handles user Q&A |
+| /log | POST | Updates dev_progress.txt |
+
+---------------------------------------
+10. CONTAINERIZATION (FUTURE PHASE)
+
+⚠️ Do NOT perform Docker setup now.
+Future phase will include one or two containers (backend+frontend).
+
+---------------------------------------
+11. LOGGING & PROGRESS TRACKING
+
+File: backend/dev_progress.txt
+Log milestones and issues with timestamps.
+Use function:
+```python
+def update_progress_log(message):
+    with open("backend/dev_progress.txt", "a") as f:
+        f.write(f"[{datetime.now()}] {message}\n")
+```
+
+---------------------------------------
+12. BEST PRACTICES
+
+- Follow PEP8, use docstrings
+- Git commit after every milestone
+- Keep state clean in React
+- Sensitive data in .env
+- Maintain consistent naming (snake_case / camelCase)
+- Validate model performance regularly
+
+---------------------------------------
+13. END OF SPRINT DELIVERABLES
+
+✅ Flask backend running
+✅ React frontend integrated
+✅ Local DistilBERT model functional
+✅ Groq API working (verification + Q&A)
+✅ Preprocessed CSV datasets ready
+✅ dev_progress.txt maintained
+❌ No Docker setup yet
+
+---------------------------------------
+END OF DOCUMENT

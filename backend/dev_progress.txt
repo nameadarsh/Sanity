@@ -1,0 +1,42 @@
+[2025-11-24 18:37:35] Initialized backend folder structure and copied datasets.
+[2025-11-24 18:38:36] Added backend logging utilities.
+[2025-11-24 18:40:09] Implemented preprocessing pipeline script.
+[2025-11-24 18:41:44] Built core Flask app with prediction, verify, ask, log endpoints.
+[2025-11-24 18:44:58] Installed backend Python dependencies.
+[2025-11-24 18:45:24] Loaded raw datasets.
+[2025-11-24 18:47:54] Loaded raw datasets.
+[2025-11-24 18:49:27] Cleaned and normalized text.
+[2025-11-24 18:49:27] Split dataset into train/val/test.
+[2025-11-24 18:49:28] Saved processed datasets to backend/data/processed.
+[2025-11-24 18:49:28] Completed data preprocessing workflow.
+[2025-11-24 18:49:38] Executed preprocessing pipeline and generated processed splits.
+[2025-11-24 18:51:02] Added DistilBERT training script with Trainer pipeline.
+[2025-11-24 18:54:17] Added endpoint unit tests and ensured they pass.
+[2025-11-24 19:09:16] Downloaded base DistilBERT model locally.
+[2025-11-24 19:11:20] Started DistilBERT fine-tuning run.
+[2025-11-24 23:03:42] Completed fine-tuning DistilBERT (1 epoch).
+[2025-11-24 23:03:42] Persisted fine-tuned weights to backend/model/distilbert and sanity_model.bin.
+[2025-11-24 23:04:22] Smoke-tested /health endpoint with fine-tuned model.
+[2025-11-25 00:03:00] Verified input handling: text/PDF/URL all working. Created evaluation script for confusion matrix.
+[2025-11-25 00:36:47] Implemented 3 LLM prompt flows: direct questions, follow-up questions, and auto-verification.
+[2025-11-25 01:10:39] Completed full frontend implementation with React, TailwindCSS, Framer Motion, and all required features.
+[2025-11-25 01:26:45] Starting Flask backend server.
+[2025-11-25 01:26:55] Starting Flask backend server.
+[2025-11-25 01:27:20] Starting Flask backend server.
+[2025-11-25 01:27:29] Starting Flask backend server.
+[2025-11-25 01:28:00] Downloaded base DistilBERT weights.
+[2025-11-25 01:32:36] Starting Flask backend server.
+[2025-11-25 01:32:45] Starting Flask backend server.
+[2025-11-25 01:38:38] Starting Flask backend server.
+[2025-11-25 01:39:15] Starting Flask backend server.
+[2025-11-25 01:39:23] Starting Flask backend server.
+[2025-11-25 01:40:05] Starting Flask backend server.
+[2025-11-25 01:46:15] Starting Flask backend server.
+[2025-11-25 01:46:57] Starting Flask backend server.
+[2025-11-25 01:47:32] Starting Flask backend server.
+[2025-11-25 01:47:41] Starting Flask backend server.
+[2025-11-25 01:48:12] Starting Flask backend server.
+[2025-11-25 02:15:02] Starting Flask backend server.
+[2025-11-25 02:15:13] Starting Flask backend server.
+[2025-11-25 02:15:15] Starting Flask backend server.
+[2025-11-25 02:15:25] Starting Flask backend server.
