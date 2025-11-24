@@ -99,6 +99,10 @@ pip install -r backend/requirements.txt
 python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('wordnet'); nltk.download('stopwords')"
 ```
 
+**Note:** Large files (model files >100MB and dataset CSV files >50MB) are excluded from the repository due to GitHub file size limits. You'll need to:
+- Download the DistilBERT model or train your own (see Training section)
+- Add your own datasets to `backend/data/raw/` for training
+
 #### 3. Frontend Setup
 
 ```bash
