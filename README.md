@@ -258,11 +258,212 @@ pytest backend/tests/
 ## 🎯 How It Works
 
 1. **Input Processing**: User submits news via text, PDF, or URL
-2. **Text Extraction**: System extracts text from the input format
-3. **Model Prediction**: Fine-tuned DistilBERT classifies as Real/Fake with confidence
-4. **Auto-Verification**: If confidence < 70%, Groq LLM verifies the prediction
-5. **Result Display**: User sees final prediction (LLM if verified, model otherwise)
-6. **Interactive Q&A**: Users can ask follow-up questions about the article
+2. **Text Extraction**: System extracts text from the input format using specialized libraries
+3. **Text Cleaning**: Extracted text is cleaned and normalized before processing
+4. **Model Prediction**: Fine-tuned DistilBERT classifies as Real/Fake with confidence
+5. **Auto-Verification**: If confidence < 70%, Groq LLM verifies the prediction
+6. **Result Display**: User sees final prediction (LLM if verified, model otherwise)
+7. **Interactive Q&A**: Users can ask follow-up questions about the article
+
+## 🔧 Technical Stack & Modules
+
+### Backend Technologies
+
+#### Core Framework & Server
+- **Flask** (≥3.0.0): Lightweight Python web framework for building REST APIs
+- **Flask-CORS** (≥4.0.0): Cross-Origin Resource Sharing support for frontend-backend communication
+- **python-dotenv** (≥1.0.0): Environment variable management from `.env` files
+- **uvicorn** (≥0.24.0): ASGI server for production deployment
+- **gunicorn** (≥21.2.0): WSGI HTTP server for production
+
+#### Machine Learning & NLP
+- **PyTorch** (≥2.1.0): Deep learning framework for model inference
+- **Transformers** (≥4.35.0): Hugging Face library for DistilBERT model loading and tokenization
+- **accelerate** (≥0.25.0): Accelerated training and inference utilities
+- **scikit-learn** (≥1.3.0): Machine learning utilities for data preprocessing and evaluation
+- **numpy** (≥1.24.0): Numerical computing for array operations
+- **pandas** (≥2.1.0): Data manipulation and analysis for dataset processing
+
+#### Natural Language Processing
+- **NLTK** (≥3.8.1): Natural Language Toolkit for text preprocessing
+  - **punkt**: Sentence tokenization
+  - **punkt_tab**: Updated tokenizer data
+  - **wordnet**: Lexical database for lemmatization
+  - **stopwords**: Common stop words removal
+  - **omw-1.4**: Open Multilingual Wordnet
+
+#### PDF Text Extraction
+The application uses a **multi-library fallback approach** for robust PDF text extraction:
+
+1. **pdfplumber** (≥0.10.0) - **Primary Method**
+   - High-quality text extraction with layout preservation
+   - Handles complex PDF structures and tables
+   - Extracts text from both file paths and byte streams
+   - Best for most PDF formats
+
+2. **PyPDF2** (≥3.0.0) - **Fallback Method 1**
+   - Lightweight PDF manipulation library
+   - Good for simple PDF documents
+   - Works with both file paths and byte streams
+   - Used when pdfplumber fails
+
+3. **PyMuPDF** (≥1.23.1) - **Fallback Method 2** (Optional)
+   - Fast PDF rendering and text extraction
+   - Excellent for scanned PDFs and complex layouts
+   - Only works with file paths (not byte streams)
+   - Used as final fallback if other methods fail
+
+**Extraction Flow:**
+```
+PDF Input → pdfplumber (try) → PyPDF2 (try) → PyMuPDF (try) → Error
+```
+
+**Implementation Location:** `backend/utils/pdf_extractor.py`
+
+#### URL/Web Scraping
+The application uses a **dual-library approach** for extracting article content from URLs:
+
+1. **newspaper3k** (≥0.2.8) - **Primary Method**
+   - Specialized library for article extraction from news websites
+   - Automatically identifies and extracts main article content
+   - Removes ads, navigation, and other non-article elements
+   - Handles article metadata (title, author, publish date)
+   - Best for news websites and blogs
+
+2. **BeautifulSoup4** (≥4.12.0) + **requests** (≥2.31.0) - **Fallback Method**
+   - **requests**: HTTP library for fetching web pages
+   - **BeautifulSoup**: HTML parsing library for extracting text
+   - Extracts all paragraph (`<p>`) tags from HTML
+   - More generic approach, works with any website
+   - Used when newspaper3k fails or is unavailable
+
+**Extraction Flow:**
+```
+URL Input → newspaper3k (try) → BeautifulSoup + requests (try) → Error
+```
+
+**Implementation Location:** `backend/utils/webpage_extractor.py`
+
+#### Text Processing & Cleaning
+- **text_cleaner.py**: Custom utility module for cleaning text before LLM processing
+  - Removes excessive whitespace
+  - Normalizes line breaks
+  - Truncates text to maximum length (default: 8000 chars)
+  - Word-boundary aware truncation
+
+#### LLM Integration
+- **Groq API**: Fast inference API for LLM interactions
+  - **Default Model**: `llama-3.3-70b-versatile` (70B parameter model)
+  - **API Endpoint**: `https://api.groq.com/openai/v1/chat/completions`
+  - **Three Prompt Flows**:
+    1. Direct questions (general queries)
+    2. Follow-up questions (context-aware)
+    3. Low-confidence verification (auto-verification)
+- **requests** (≥2.31.0): HTTP client for API calls
+
+#### Logging & Monitoring
+- **loguru** (≥0.7.0): Advanced logging library with structured logging
+- Custom logger utilities in `backend/utils/logger.py`
+
+#### Testing
+- **pytest** (≥8.0.0): Testing framework for backend unit tests
+- **tqdm** (≥4.66.0): Progress bars for long-running operations
+
+### Frontend Technologies
+
+#### Core Framework
+- **React** (^18.2.0): JavaScript library for building user interfaces
+- **React DOM** (^18.2.0): React renderer for web browsers
+- **Vite** (^5.0.8): Fast build tool and development server
+
+#### Routing & Navigation
+- **React Router DOM** (^6.20.0): Declarative routing for React applications
+
+#### State Management
+- **Zustand** (^4.4.7): Lightweight state management library
+  - `usePredictionStore`: Manages prediction results, chat history, loading states
+  - `useThemeStore`: Manages light/dark theme with localStorage persistence
+
+#### HTTP Client
+- **Axios** (^1.6.2): Promise-based HTTP client for API requests
+  - Wrapper in `frontend/src/lib/api.js` for backend communication
+  - Automatic error handling and request/response interceptors
+
+#### Styling & UI
+- **TailwindCSS** (^3.3.6): Utility-first CSS framework
+  - Dark mode support via class strategy
+  - Custom theme extensions (colors, animations, transitions)
+  - Fully responsive design system
+- **PostCSS** (^8.4.32): CSS transformation tool
+- **Autoprefixer** (^10.4.16): Automatic vendor prefixing
+
+#### Animations
+- **Framer Motion** (^10.16.16): Production-ready motion library for React
+  - Page transitions
+  - Component animations (fade, slide, scale)
+  - Stagger effects for lists
+  - Smooth hover interactions
+
+#### UI Components
+- **@headlessui/react** (^1.7.17): Unstyled, accessible UI components
+- **@heroicons/react** (^2.1.1): Beautiful hand-crafted SVG icons
+- **lucide-react** (^0.294.0): Additional icon library
+
+#### Development Tools
+- **ESLint** (^8.55.0): JavaScript linter
+- **eslint-plugin-react** (^7.33.2): React-specific linting rules
+- **eslint-plugin-react-hooks** (^4.6.0): React Hooks linting rules
+- **@vitejs/plugin-react** (^4.2.1): Vite plugin for React support
+
+### Data Processing Pipeline
+
+#### Preprocessing (`backend/scripts/preprocess_data.py`)
+1. **Load Datasets**: Merges real and fake news CSV files
+2. **Text Cleaning**:
+   - Lowercase conversion
+   - Special character removal
+   - URL and email removal
+   - Whitespace normalization
+3. **Tokenization**: NLTK word tokenization
+4. **Stopword Removal**: Removes common stop words
+5. **Lemmatization**: Reduces words to their root forms
+6. **Dataset Splitting**: Train/validation/test split (80/10/10)
+
+#### Model Training (`backend/scripts/train_model.py`)
+- **Base Model**: `distilbert-base-uncased` from Hugging Face
+- **Fine-tuning**: Custom training on news classification dataset
+- **Framework**: Hugging Face Trainer API
+- **Output**: Fine-tuned model saved to `backend/model/distilbert/`
+
+#### Model Inference (`backend/app.py`)
+- **Tokenization**: DistilBERT tokenizer with max length 512
+- **Inference**: PyTorch model forward pass
+- **Post-processing**: Softmax for probability distribution
+- **Confidence Calculation**: Maximum probability as confidence score
+
+### LLM Prompt System
+
+#### Prompt Templates (`backend/utils/prompts.py`)
+1. **PROMPT_DIRECT_QUESTION**: For general user queries
+   - System prompt: Expert AI assistant with fact-checking emphasis
+   - Output format: Bullet points, no hallucinations
+
+2. **PROMPT_FOLLOWUP_NEWS**: For context-aware follow-up questions
+   - Includes: Article text, model prediction, verification summary
+   - System prompt: Answer based strictly on provided context
+
+3. **PROMPT_LOW_CONFIDENCE_VERIFY**: For auto-verification
+   - System prompt: Fact-checking model with strict verification
+   - Output format: "Prediction: Real/Fake\nReasoning: <2-3 sentences>"
+
+#### LLM Handler (`backend/utils/llm_handler.py`)
+- **GroqClient**: Wrapper class for Groq API interactions
+- **Methods**:
+  - `call_llm()`: Generic LLM call with prompt template
+  - `verify_article()`: Auto-verification for low-confidence predictions
+  - `answer_question()`: Q&A with context routing
+- **Error Handling**: Robust error handling with fallbacks
+- **Response Parsing**: Extracts prediction and reasoning from LLM output
 
 ## 🔧 Configuration
 
@@ -285,6 +486,28 @@ To auto-update the model:
 python backend/scripts/auto_update_model.py
 ```
 
+### PDF Extraction Configuration
+
+The PDF extraction system automatically tries multiple libraries in order:
+1. **pdfplumber** (recommended for best results)
+2. **PyPDF2** (fallback for simple PDFs)
+3. **PyMuPDF** (fallback for complex/scanned PDFs)
+
+All three libraries are included in `backend/requirements.txt`. If you want to disable PyMuPDF (optional dependency), you can remove it from requirements, and the system will use the first two methods.
+
+### URL Scraping Configuration
+
+The URL extraction system uses:
+1. **newspaper3k** (primary - best for news sites)
+2. **BeautifulSoup + requests** (fallback - works with any website)
+
+Both are included in `backend/requirements.txt`. The system automatically falls back if newspaper3k fails.
+
+**Note**: Some websites may block automated scraping. If you encounter issues:
+- Check if the website requires authentication
+- Verify the URL is publicly accessible
+- Consider adding custom headers or delays for rate limiting
+
 ## 🐛 Troubleshooting
 
 ### Backend Issues
@@ -292,11 +515,22 @@ python backend/scripts/auto_update_model.py
 - **Model not loading**: Ensure `MODEL_DIR` in `.env` points to the correct model directory
 - **Groq API errors**: Check your API key and model availability
 - **Port already in use**: Change `FLASK_PORT` in `.env`
+- **PDF extraction fails**: 
+  - Ensure all PDF libraries are installed: `pip install pdfplumber PyPDF2 PyMuPDF`
+  - Check if the PDF is password-protected or corrupted
+  - Verify file permissions
+- **URL scraping fails**:
+  - Check if the website is accessible and not blocking bots
+  - Verify the URL is a valid news article link
+  - Some sites may require custom headers (modify `webpage_extractor.py`)
+- **NLTK data missing**: Run the NLTK download command in the installation section
 
 ### Frontend Issues
 
 - **API connection errors**: Verify `VITE_API_URL` in `.env` matches backend URL
 - **Build errors**: Run `npm install` again in the frontend directory
+- **Theme not persisting**: Check browser localStorage permissions
+- **Animations not working**: Ensure Framer Motion is properly installed
 
 ## 📝 License
 
@@ -314,11 +548,33 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 🙏 Acknowledgments
 
-- [Hugging Face Transformers](https://huggingface.co/transformers/)
-- [Groq API](https://console.groq.com/)
-- [React](https://react.dev/)
-- [TailwindCSS](https://tailwindcss.com/)
-- [Framer Motion](https://www.framer.com/motion/)
+### Core Technologies
+- [Hugging Face Transformers](https://huggingface.co/transformers/) - Pre-trained models and tokenizers
+- [Groq API](https://console.groq.com/) - Fast LLM inference
+- [PyTorch](https://pytorch.org/) - Deep learning framework
+- [Flask](https://flask.palletsprojects.com/) - Web framework
+
+### Frontend Libraries
+- [React](https://react.dev/) - UI library
+- [TailwindCSS](https://tailwindcss.com/) - CSS framework
+- [Framer Motion](https://www.framer.com/motion/) - Animation library
+- [Zustand](https://github.com/pmndrs/zustand) - State management
+- [Vite](https://vitejs.dev/) - Build tool
+
+### Data Processing
+- [NLTK](https://www.nltk.org/) - Natural language processing
+- [pandas](https://pandas.pydata.org/) - Data manipulation
+- [scikit-learn](https://scikit-learn.org/) - Machine learning utilities
+
+### PDF Extraction
+- [pdfplumber](https://github.com/jsvine/pdfplumber) - PDF text extraction
+- [PyPDF2](https://github.com/py-pdf/PyPDF2) - PDF manipulation
+- [PyMuPDF](https://github.com/pymupdf/PyMuPDF) - Fast PDF processing
+
+### Web Scraping
+- [newspaper3k](https://github.com/codelucas/newspaper) - Article extraction
+- [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) - HTML parsing
+- [requests](https://requests.readthedocs.io/) - HTTP library
 
 ---
 
